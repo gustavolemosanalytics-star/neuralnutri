@@ -1,0 +1,167 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  passwordHash  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Mode: AI_AUTO (anamnese IA) ou NUTRI_PRO (CSV do nutricionista)
+  mode          String    @default("AI_AUTO")
+  
+  // User physical stats and goals
+  stats         Json?     // { peso, altura, idade, sexo, nivelAtividade, objetivo, tmb, tdee }
+  
+  // Gamification (RPG Profile)
+  level         Int       @default(1)
+  currentXP     Int       @default(0)
+  streakDays    Int       @default(0)   // Dias consecutivos batendo meta
+  lastActiveDate DateTime?              // Para calcular streak
+  coins         Int       @default(0)   // Moeda virtual (futuro)
+  
+  // Achievements and badges (futuro)
+  achievements  Json?     // [{ id, name, unlockedAt }]
+  
+  // Relations
+  mealPlans     MealPlan[]
+  dailyLogs     DailyLog[]
+  meals         Meal[]
+  
+  @@index([email])
+}
+
+model MealPlan {
+  id          String   @id @default(uuid())
+  userId      String
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Targets
+  targetKcal  Int
+  targetMacros Json    // { proteina: g, carboidrato: g, gordura: g }
+  
+  // Meal structure
+  meals       Json     // [{ nome: "Café da Manhã", horario: "07:00", kcal: 400, alimentos: [...] }]
+  
+  // Source
+  source      String   @default("AI") // "AI" ou "NUTRI"
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+}
+
+model DailyLog {
+  id              String   @id @default(uuid())
+  userId          String
+  date            DateTime @db.Date
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Ingestão
+  eatenKcal       Int      @default(0)
+  eatenMacros     Json     @default("{\"proteina\": 0, \"carboidrato\": 0, \"gordura\": 0}")
+  
+  // Gasto Ativo (Exercício)
+  burnedKcal      Int      @default(0)
+  exercises       Json     @default("[]") // [{ nome, tipo, duracao, intensidade, kcal }]
+  
+  // Targets do dia (snapshot do plano ativo)
+  targetKcal      Int      @default(0)
+  targetMacros    Json     @default("{\"proteina\": 0, \"carboidrato\": 0, \"gordura\": 0}")
+  
+  // Metricas Finais
+  netCalories     Int      @default(0)    // (Ingerido - Queimado)
+  deficitStatus   String   @default("Pending") // "Perfect", "Good", "Moderate", "Fail", "Pending"
+  
+  // Gamification do Dia
+  dailyXP_earned  Int      @default(0)
+  isCompleted     Boolean  @default(false)
+  streakMaintained Boolean @default(false)
+  
+  // Water tracking (bonus)
+  waterMl         Int      @default(0)
+  
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  meals           Meal[]
+  
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+model Meal {
+  id          String   @id @default(uuid())
+  userId      String
+  dailyLogId  String?
+  
+  name        String              // "Café da Manhã", "Almoço", etc
+  description String?
+  time        DateTime?
+  createdAt   DateTime @default(now())
+  
+  // Nutrition
+  kcal        Int      @default(0)
+  macros      Json     @default("{\"proteina\": 0, \"carboidrato\": 0, \"gordura\": 0}")
+  
+  // Food items
+  items       Json     @default("[]") // [{ nome, quantidade, unidade, kcal, macros }]
+  
+  // Photo (futuro - para análise por IA)
+  photoUrl    String?
+  
+  // Was this logged via AI chat?
+  source      String   @default("MANUAL") // "MANUAL", "AI_CHAT", "VOICE"
+  
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dailyLog    DailyLog? @relation(fields: [dailyLogId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([dailyLogId])
+}
+
+// Exercise templates for quick logging
+model ExerciseTemplate {
+  id              String   @id @default(uuid())
+  name            String   @unique
+  category        String   // "Cardio", "Musculação", "HIIT", "Yoga", "Esporte"
+  metValue        Float    // Metabolic Equivalent of Task
+  kcalPerMinute   Json     // { leve: n, moderado: n, intenso: n }
+  icon            String?
+  
+  @@index([category])
+}
+
+// Food database for quick lookup
+model FoodItem {
+  id          String   @id @default(uuid())
+  name        String
+  brand       String?
+  category    String   // "Proteína", "Carboidrato", "Gordura", "Fruta", etc
+  
+  // Nutrition per 100g
+  kcalPer100g Int
+  macrosPer100g Json   // { proteina, carboidrato, gordura, fibra }
+  
+  // Common serving sizes
+  servings    Json     @default("[]") // [{ nome: "unidade", gramas: 50 }]
+  
+  isVerified  Boolean  @default(false)
+  
+  @@index([name])
+  @@index([category])
+}
