@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-interface Macros {
+export interface Macros {
     proteina: number;
     carboidrato: number;
     gordura: number;
@@ -16,7 +16,7 @@ interface Exercise {
     registeredAt: string;
 }
 
-interface FoodItem {
+export interface FoodItem {
     id: string;
     nome: string;
     quantidade: number;
@@ -25,7 +25,7 @@ interface FoodItem {
     macros: Macros;
 }
 
-interface Meal {
+export interface Meal {
     id: string;
     nome: string;
     time: string;
@@ -65,7 +65,7 @@ interface DailyLogStore {
     isLoading: boolean;
 
     // Actions
-    initializeDayLog: (targetKcal: number, targetMacros: Macros) => void;
+    initializeDayLog: (targetKcal: number, targetMacros: Macros, initialMeals?: (Omit<Meal, 'id' | 'items'> & { items: Omit<FoodItem, 'id'>[] })[]) => void;
     addMeal: (meal: Omit<Meal, 'id'>) => void;
     removeMeal: (mealId: string) => void;
     addExercise: (exercise: Omit<Exercise, 'id' | 'registeredAt'>) => void;
@@ -106,27 +106,36 @@ export const useDailyLogStore = create<DailyLogStore>((set, get) => ({
     currentLog: createEmptyLog(),
     isLoading: false,
 
-    initializeDayLog: (targetKcal, targetMacros) => {
+    initializeDayLog: (targetKcal, targetMacros, initialMeals = []) => {
         const today = new Date().toISOString().split('T')[0];
         const { currentLog } = get();
 
+        const mealsWithIds = initialMeals.map(m => ({
+            ...m,
+            id: generateId(),
+            items: (m.items || []).map(item => ({
+                ...item,
+                id: generateId()
+            }))
+        })) as Meal[];
+
         if (currentLog.date !== today) {
-            // New day, create fresh log
             set({
                 currentLog: {
                     ...createEmptyLog(),
                     date: today,
                     targetKcal,
                     targetMacros,
+                    meals: mealsWithIds,
                 },
             });
         } else {
-            // Same day, just update targets if needed
             set({
                 currentLog: {
                     ...currentLog,
                     targetKcal,
                     targetMacros,
+                    meals: currentLog.meals.length === 0 ? mealsWithIds : currentLog.meals,
                 },
             });
         }
