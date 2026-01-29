@@ -47,7 +47,7 @@ const INITIAL_DATA: AnamneseData = {
 
 export const useAnamneseStore = create<AnamneseStore>((set) => ({
     currentStep: 0,
-    totalSteps: 6, // 0 to 5 indices, 6 is the result
+    totalSteps: 7, // 0 to 6 indices, 7 is the end
     data: INITIAL_DATA,
     isCalculating: false,
 

@@ -40,7 +40,7 @@ const LOADING_STEPS = [
 
 export function StepComputing() {
     const router = useRouter();
-    const { data } = useAnamneseStore();
+    const { data, nextStep } = useAnamneseStore();
     const { setUser } = useUserStore();
     const { initializeDayLog } = useDailyLogStore();
     const [loadingStep, setLoadingStep] = useState(0);
@@ -96,8 +96,8 @@ export function StepComputing() {
                     initialMeals
                 );
 
-                // 4. Redirect to Dashboard
-                router.push('/dashboard');
+                // 4. Go to Registration instead of Dashboard
+                nextStep();
             }
         }, LOADING_STEPS.length * 1500 + 500);
 

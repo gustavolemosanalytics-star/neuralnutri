@@ -2,12 +2,9 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, X, Send, Sparkles, User, Brain } from 'lucide-react';
+import { MessageCircle, X, Send, Sparkles, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-
-import { useDailyLogStore } from '@/stores/dailyLogStore';
-import { analyzeUserQuery } from '@/services/aiIntelligence';
 
 interface Message {
     id: string;
@@ -19,6 +16,7 @@ interface Message {
 
 export function AICopilot() {
     const [isOpen, setIsOpen] = useState(false);
+    const [chatId, setChatId] = useState<string | null>(null);
     const [input, setInput] = useState('');
     const [messages, setMessages] = useState<Message[]>([
         {
@@ -29,7 +27,6 @@ export function AICopilot() {
         },
     ]);
     const scrollRef = useRef<HTMLDivElement>(null);
-    const addMeal = useDailyLogStore((state) => state.addMeal);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -60,20 +57,37 @@ export function AICopilot() {
             isProcessing: true
         }]);
 
-        // 2. Analyze Query
-        const analysis = await analyzeUserQuery(input);
+        try {
+            // 2. Call the real API
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: input, chatId }),
+            });
 
-        // 3. Perform Action if needed
-        if (analysis.type === 'meal_log' && analysis.mealData) {
-            addMeal(analysis.mealData);
+            const data = await response.json();
+
+            if (data.error) throw new Error(data.error);
+
+            // 3. Update chatId if it was a new chat
+            if (data.chatId && !chatId) {
+                setChatId(data.chatId);
+            }
+
+            // 4. Update with actual response
+            setMessages((prev) => prev.map(m =>
+                m.id === processingId
+                    ? { ...m, content: data.message, isProcessing: false }
+                    : m
+            ));
+        } catch (error) {
+            console.error("Chat Error:", error);
+            setMessages((prev) => prev.map(m =>
+                m.id === processingId
+                    ? { ...m, content: "Desculpe, ocorreu um erro ao processar sua solicitação.", isProcessing: false }
+                    : m
+            ));
         }
-
-        // 4. Update with actual response
-        setMessages((prev) => prev.map(m =>
-            m.id === processingId
-                ? { ...m, content: analysis.message, isProcessing: false }
-                : m
-        ));
     };
 
     return (

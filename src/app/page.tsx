@@ -1,6 +1,12 @@
+import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 
-export default function Home() {
-  // Start with the Anamnese flow
-  redirect('/anamnese');
+export default async function Home() {
+  const session = await auth();
+
+  if (session) {
+    redirect('/dashboard');
+  } else {
+    redirect('/login');
+  }
 }

@@ -1,15 +1,15 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { LayoutDashboard, ClipboardList, User, Award, Settings } from 'lucide-react';
+import { LayoutDashboard, ClipboardList, User, Utensils } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const NAV_ITEMS = [
     { icon: LayoutDashboard, label: 'Home', href: '/dashboard' },
+    { icon: Utensils, label: 'Dieta', href: '/dieta' },
     { icon: ClipboardList, label: 'Portal', href: '/nutri-portal' },
     { icon: User, label: 'Perfil', href: '/perfil' },
-    { icon: Award, label: 'Rank', href: '/ranking' },
 ];
 
 export function BottomNav() {

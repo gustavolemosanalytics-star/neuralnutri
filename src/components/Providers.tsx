@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { SessionProvider } from 'next-auth/react';
 
 interface ProvidersProps {
     children: ReactNode;
@@ -22,10 +23,12 @@ export function Providers({ children }: ProvidersProps) {
     );
 
     return (
-        <QueryClientProvider client={queryClient}>
-            <TooltipProvider delayDuration={300}>
-                {children}
-            </TooltipProvider>
-        </QueryClientProvider>
+        <SessionProvider>
+            <QueryClientProvider client={queryClient}>
+                <TooltipProvider delayDuration={300}>
+                    {children}
+                </TooltipProvider>
+            </QueryClientProvider>
+        </SessionProvider>
     );
 }

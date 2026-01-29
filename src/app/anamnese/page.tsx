@@ -7,6 +7,7 @@ import { StepRoutine } from '@/components/anamnese/StepRoutine';
 import { StepGoal } from '@/components/anamnese/StepGoal';
 import { StepPreferences } from '@/components/anamnese/StepPreferences';
 import { StepComputing } from '@/components/anamnese/StepComputing';
+import { StepRegister } from '@/components/anamnese/StepRegister';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export default function AnamnesePage() {
@@ -27,6 +28,8 @@ export default function AnamnesePage() {
                 return <StepPreferences />;
             case 5:
                 return <StepComputing />;
+            case 6:
+                return <StepRegister />;
             default:
                 return <StepIntro />;
         }
@@ -35,13 +38,13 @@ export default function AnamnesePage() {
     return (
         <div className="w-full">
             {/* Progress Bar (Optional, maybe for steps > 0) */}
-            {currentStep > 0 && currentStep < 5 && (
+            {currentStep > 0 && currentStep < 6 && (
                 <div className="mb-8">
                     <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
                         <motion.div
                             className="h-full bg-neon-green"
                             initial={{ width: 0 }}
-                            animate={{ width: `${(currentStep / 4) * 100}%` }}
+                            animate={{ width: `${(currentStep / 5) * 100}%` }}
                             transition={{ duration: 0.5 }}
                         />
                     </div>
